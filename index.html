@@ -69,14 +69,18 @@
         <h1>Calculadora de Limite</h1>
         <div class="input-group">
             <label for="dias">Número de dias:</label>
-            <input type="number" id="dias" value="30" />
+            <input type="number" id="dias" value="360" />
         </div>
         <div class="input-group">
-            <label for="limite">Gasto em gasolina diário (R$):</label>
+            <label for="limite">Limite adicionado diário (R$):</label>
             <input type="number" id="limite" value="200" />
         </div>
         <div class="input-group">
-            <label for="rendimento">Rendimento diário do limite já usado (%):</label>
+            <label for="cashback">Cashback diário (R$):</label>
+            <input type="number" id="cashback" value="3" />
+        </div>
+        <div class="input-group">
+            <label for="rendimento">Rendimento diário (%):</label>
             <input type="number" id="rendimento" value="0.033" />
         </div>
         <div class="input-group">
@@ -91,31 +95,48 @@
         function calcular() {
             const dias = parseInt(document.getElementById("dias").value);
             const limiteDiario = parseFloat(document.getElementById("limite").value);
+            const cashbackDiario = parseFloat(document.getElementById("cashback").value);
             const rendimentoDiarioPercentual = parseFloat(document.getElementById("rendimento").value) / 100;
 
-            let limiteAcumulado = 0;
+            let saldoAcumulado = 0;
             let cashbackTotal = 0;
             let rendimentoTotal = 0;
+            let lucroAcumulado = 0;  // Este é o lucro acumulado de cashback e rendimento
+            let saldoFinal = 0;
 
             for (let dia = 1; dia <= dias; dia++) {
-                // A cada dia o limite é adicionado e gasto
-                limiteAcumulado += limiteDiario;
-                // Calculando o cashback de 1,5% sobre o limite adicionado
-                let cashbackDiario = limiteDiario * 0.015;
-                // Calculando o rendimento sobre o limite acumulado
-                let rendimentoDiario = limiteAcumulado * rendimentoDiarioPercentual;
-                // Acumulando o rendimento e cashback
-                rendimentoTotal += rendimentoDiario;
+                // A cada dia o limite é adicionado
+                saldoAcumulado += limiteDiario;
+                
+                // O cashback diário é somado ao saldo total
                 cashbackTotal += cashbackDiario;
-                // O limite continua acumulando com o cashback e o rendimento diário
-                limiteAcumulado += rendimentoDiario + cashbackDiario;
+                saldoAcumulado += cashbackDiario;
+                
+                // Calculando o rendimento sobre o saldo total
+                let rendimentoDiario = saldoAcumulado * rendimentoDiarioPercentual;
+                rendimentoTotal += rendimentoDiario;
+                saldoAcumulado += rendimentoDiario;
+
+                // A cada 30 dias, o limite é zerado e o cashback + rendimento acumulados viram lucro
+                if (dia % 30 === 0) {
+                    // Transferir cashback e rendimento para o lucro
+                    lucroAcumulado += cashbackTotal + rendimentoTotal;
+                    // Resetando o cashback e rendimento
+                    cashbackTotal = 0;
+                    rendimentoTotal = 0;
+                    // O limite diário volta a R$ 200
+                    saldoAcumulado = lucroAcumulado;
+                    // O lucro começa a render no próximo ciclo
+                    lucroAcumulado *= (1 + rendimentoDiarioPercentual);  // Aplica o rendimento sobre o lucro acumulado
+                }
             }
 
             // Exibindo os resultados
             document.getElementById("resultado").innerHTML = `
-                <p><strong>Limite acumulado final:</strong> R$ ${limiteAcumulado.toFixed(2)}</p>
-                <p><strong>Cashback total:</strong> R$ ${cashbackTotal.toFixed(2)}</p>
-                <p><strong>Rendimento total:</strong> R$ ${rendimentoTotal.toFixed(2)}</p>
+                <p><strong>Saldo líquido final (incluindo limite, cashback e rendimento):</strong> R$ ${saldoAcumulado.toFixed(2)}</p>
+                <p><strong>Cashback total acumulado:</strong> R$ ${cashbackTotal.toFixed(2)}</p>
+                <p><strong>Rendimento total acumulado:</strong> R$ ${rendimentoTotal.toFixed(2)}</p>
+                <p><strong>Lucro final acumulado (cashback + rendimento):</strong> R$ ${lucroAcumulado.toFixed(2)}</p>
             `;
         }
     </script>
